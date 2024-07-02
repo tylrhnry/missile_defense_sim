@@ -32,7 +32,6 @@ use plotters::prelude::*;
 
 
 
-
 fn main() {
     // Create enemy missile
     // Based off YJ-62
@@ -56,7 +55,6 @@ fn main() {
     //}
 
     // enemy is now simulated
-
 
 
     // Create interceptor missile
@@ -90,27 +88,6 @@ fn main() {
     let x_range = -100.0..500_000.0;
     let y_range = -100.0..500_000.0;
     let z_range = -100.0..500_000.0;
-    let mut chart = ChartBuilder::on(&root)
-        .caption("Missile Paths", ("sans-serif", 30))
-        .margin(20)
-        .x_label_area_size(40)
-        .y_label_area_size(40)
-        .build_cartesian_3d(x_range, y_range, z_range)
-        .unwrap();
-
-    chart.with_projection(|mut pb| {
-        pb.pitch = 0.;
-        pb.yaw = 0.;
-        pb.scale = 0.9;
-        pb.into_matrix()
-    });
-
-    chart.configure_axes()
-         .light_grid_style(BLACK.mix(0.15))
-         .max_light_lines(3)
-         .draw()
-         .unwrap();
-
     // Simulation parameters
     let time_step = 0.005;
     //let num_steps = 100_000; // Adjust as needed
@@ -138,9 +115,33 @@ fn main() {
         interceptor_positions.push((interceptor.pos.x, interceptor.pos.y, interceptor.pos.z));
 
 
-        if iter_count % 10_000 == 0 {
+        if (iter_count % 10_000 == 0) | 
+            ((abs_dist(&interceptor.pos, &enemy.pos) < 100.0) & 
+             (iter_count % 100 == 0)) {
             // draw frame
+
             root.fill(&WHITE).unwrap();
+
+            let mut chart = ChartBuilder::on(&root)
+                .caption("Missile Paths", ("sans-serif", 30))
+                .margin(20)
+                .x_label_area_size(40)
+                .y_label_area_size(40)
+                .build_cartesian_3d(x_range.clone(), y_range.clone(), z_range.clone())
+                .unwrap();
+
+            chart.with_projection(|mut pb| {
+                pb.pitch = 0.25;
+                pb.yaw = 0.25;
+                pb.scale = 0.9;
+                pb.into_matrix()
+            });
+
+            chart.configure_axes()
+                .light_grid_style(BLACK.mix(0.15))
+                .max_light_lines(3)
+                .draw()
+                .unwrap();
 
             // Plot enemy missile path
             chart.draw_series(LineSeries::new(
@@ -165,7 +166,6 @@ fn main() {
             root.present().unwrap();
         }
         iter_count += 1;
-        println!("{iter_count}");
     }
 
 
