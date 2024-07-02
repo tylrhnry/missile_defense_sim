@@ -84,8 +84,7 @@ fn main() {
     //}
 
     // Chat gpt. 
-    let root = BitMapBackend::new("missile_paths.png", (1920, 1080)).into_drawing_area();
-    root.fill(&WHITE).unwrap();
+    let root = BitMapBackend::gif("missile_paths.gif", (1920, 1080), 250).unwrap().into_drawing_area();
 
     // Setup chart with 3D projection
     let x_range = -100.0..500_000.0;
@@ -120,6 +119,7 @@ fn main() {
     let mut enemy_positions = Vec::new();
     let mut interceptor_positions = Vec::new();
 
+    let mut iter_count = 0;
     loop {
         // match example
         match enemy.update_pos(time_step) {
@@ -136,29 +136,37 @@ fn main() {
 
         enemy_positions.push((enemy.pos.x, enemy.pos.y, enemy.pos.z));
         interceptor_positions.push((interceptor.pos.x, interceptor.pos.y, interceptor.pos.z));
+
+
+        if iter_count % 10_000 == 0 {
+            // draw frame
+            root.fill(&WHITE).unwrap();
+
+            // Plot enemy missile path
+            chart.draw_series(LineSeries::new(
+                enemy_positions.iter().map(|&(x, y, z)| (x, y, z)),
+                &RED,
+            )).unwrap();
+
+            // Plot interceptor missile path
+            chart.draw_series(LineSeries::new(
+                interceptor_positions.iter().map(|&(x, y, z)| (x, y, z)),
+                &BLUE,
+            )).unwrap();
+
+            // Configure and draw chart
+            chart.configure_series_labels()
+                .background_style(&WHITE.mix(0.8))
+                .border_style(&BLACK)
+                .draw()
+                .unwrap();
+
+            // Save the plot to a file
+            root.present().unwrap();
+        }
+        iter_count += 1;
+        println!("{iter_count}");
     }
-
-    // Plot enemy missile path
-    chart.draw_series(LineSeries::new(
-        enemy_positions.iter().map(|&(x, y, z)| (x, y, z)),
-        &RED,
-    )).unwrap();
-
-    // Plot interceptor missile path
-    chart.draw_series(LineSeries::new(
-        interceptor_positions.iter().map(|&(x, y, z)| (x, y, z)),
-        &BLUE,
-    )).unwrap();
-
-    // Configure and draw chart
-    chart.configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
-        .draw()
-        .unwrap();
-
-    // Save the plot to a file
-    root.present().unwrap();
 
 
     // Exit gracefully
