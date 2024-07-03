@@ -25,10 +25,10 @@
 /// All distances are in meters and all time is in seconds
 /// Heading is represented as a normalized vector (length 1)
 
-use std::process;
 
-// Chat gpt
 use plotters::prelude::*;
+use std::f64::consts::PI;
+
 
 
 
@@ -40,7 +40,7 @@ fn main() {
     let enemy_vel = Velocity { speed: 360.0, heading: enemy_heading }; // 950 km/h
     let enemy_target_pos = Position { x: 250_000.0, y: 0.0, z: 100_000.0 };
     let enemy_detonation_dist = 3.0;
-    let mut enemy = EnemyMissile::new(enemy_pos, enemy_vel, enemy_target_pos, enemy_detonation_dist);
+    let mut enemy = EnemyMissile::new(enemy_pos, enemy_vel, enemy_target_pos, enemy_detonation_dist, None);
 
     //println!("Starting Position: {:?}", enemy.pos);
     //enemy.update_pos(5.0); // 5 seconds
@@ -82,7 +82,7 @@ fn main() {
     //}
 
     // Chat gpt. 
-    let root = BitMapBackend::gif("missile_paths.gif", (1920, 1080), 250).unwrap().into_drawing_area();
+    let root = BitMapBackend::gif("missile_paths.gif", (3840, 2160), 250).unwrap().into_drawing_area();
 
     // Setup chart with 3D projection
     let x_range = -100.0..500_000.0;
@@ -97,6 +97,7 @@ fn main() {
 
     let mut iter_count = 0;
     loop {
+        //println!("{:?}", enemy.pos.clone());
         // match example
         match enemy.update_pos(time_step) {
             MissileState::Normal => (), // show what happens when we don't have this arm
@@ -105,9 +106,11 @@ fn main() {
                 break;
             }
         }
+        // the same as the match, but when we only care about 1 variant
         if let MissileState::Exploded = interceptor.update_pos(time_step) {
             break;
         }
+        enemy.update_vel();
         interceptor.update_vel(enemy.pos.clone());
 
         enemy_positions.push((enemy.pos.x, enemy.pos.y, enemy.pos.z));
@@ -130,8 +133,10 @@ fn main() {
                 .unwrap();
 
             chart.with_projection(|mut pb| {
-                pb.pitch = 0.25;
-                pb.yaw = 0.25;
+                //pb.pitch = 0.25;
+                //pb.yaw = 0.25;
+                pb.pitch = 0.;
+                pb.yaw = 1.;
                 pb.scale = 0.9;
                 pb.into_matrix()
             });
@@ -174,6 +179,7 @@ struct EnemyMissile {
     vel: Velocity,
     detonation_dist: f64,
     target_pos: Position,
+    theta: f64,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -188,6 +194,7 @@ struct Velocity {
     heading: Heading
 }
 
+#[derive(Debug)]
 struct Heading {
     x: f64,
     y: f64,
@@ -198,13 +205,27 @@ struct Heading {
 // At this point, compile the code and see the warnings for unconstructed structs
 
 impl EnemyMissile {
-    fn new(pos: Position, vel: Velocity, target_pos: Position, detonation_dist: f64) -> Self {
-        EnemyMissile { pos, vel, target_pos, detonation_dist }
+    fn new(pos: Position, vel: Velocity, target_pos: Position, detonation_dist: f64, theta: Option<f64>) -> Self {
+        let theta = theta.unwrap_or(0.0);
+        EnemyMissile { pos, vel, target_pos, detonation_dist, theta }
     }
 
     // don't implement this right after the constructor, move on and show construction
-    fn update_vel(&mut self, new_target_pos: Position) {
-        // TODO: Add the ability for us to give the enemy missile a variable target
+    fn update_vel(&mut self) {
+        //println!("Updating enemy heading");
+        //println!("Before update: {:?}", self.vel.heading);
+        self.theta += PI / 10_000.0; // our change rate (affects frequency of our missile's oscillation)
+        //let amplitude = 5.0;
+        let adjacent = self.theta.cos(); // The x-component of the radius line when at angle
+        
+        let slope = adjacent;
+        //let slope = -(adjacent.sin()); // The slope of the wave (and our missile) when at that point
+        //println!("Slope of enemy missile: {slope}");
+
+        self.vel.heading.z = slope; // Set our missile's heading to the computed angle
+        self.vel.heading.y = -1.;
+        //println!("After update: {:?}", self.vel.heading);
+        //println!("")
     }
 }
 
@@ -282,7 +303,6 @@ impl UpdateMissile for EnemyMissile {
     fn set_pos(&mut self, new_pos: Position) { self.pos = new_pos }
     fn explode(&self) {
         println!("oof");
-        // add test for explosion
     }
 
     // Test flight of missile, then go to the interceptor
