@@ -90,7 +90,6 @@ fn main() {
     let z_range = -100.0..500_000.0;
     // Simulation parameters
     let time_step = 0.005;
-    //let num_steps = 100_000; // Adjust as needed
 
     // Data collection
     let mut enemy_positions = Vec::new();
@@ -167,10 +166,7 @@ fn main() {
         }
         iter_count += 1;
     }
-
-
-    // Exit gracefully
-    process::exit(0);}
+}
 
 
 struct EnemyMissile {
@@ -269,9 +265,6 @@ trait UpdateMissile {
         self.set_pos(new_pos);
         MissileState::Normal
     }
-
-
-    // our interceptor is going to add an update_target_pos()
 
 }
 
