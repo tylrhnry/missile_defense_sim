@@ -35,10 +35,10 @@ use std::f64::consts::PI;
 fn main() {
     // Create enemy missile
     // Based off YJ-62
-    let enemy_pos = Position { x: 250_000.0, y: 500_000.0, z: 100_000.0 };
-    let enemy_heading = Heading { x: 0.0, y: -1.0, z: 0.0 }; // facing straight down the y axis
+    let enemy_pos = Position { x: 500_000.0, y: 100_000.0, z: 250_000.0 };
+    let enemy_heading = Heading { x: -1.0, y: 0.0, z: 0.0 }; // facing straight down the y axis
     let enemy_vel = Velocity { speed: 360.0, heading: enemy_heading }; // 950 km/h
-    let enemy_target_pos = Position { x: 250_000.0, y: 0.0, z: 100_000.0 };
+    let enemy_target_pos = Position { x: 0.0, y: 100_000.0, z: 250_000.0 };
     let enemy_detonation_dist = 3.0;
     let mut enemy = EnemyMissile::new(enemy_pos, enemy_vel, enemy_target_pos, enemy_detonation_dist, None);
 
@@ -59,12 +59,12 @@ fn main() {
 
     // Create interceptor missile
     // Based off RIM-174 Standard ERAM
-    let interceptor_pos = Position { x: 200_000.0, y: 0.0, z: 0.0 };
-    let interceptor_heading = Heading { x: 0.0, y: 0.0, z: 1.0 }; // facing straight up
+    let interceptor_pos = Position { x: 0.0, y: 0.0, z: 200_000.0 };
+    let interceptor_heading = Heading { x: 0.0, y: 1.0, z: 0.0 }; // facing straight up
     let interceptor_vel = Velocity { speed: 500.0, heading: interceptor_heading }; // 4285 km/h
     let interceptor_target_pos = enemy.pos.clone();
     let interceptor_detonation_dist = 10.0;
-    let interceptor_max_accel = MissileAccel { forward: 30.0, backward: 20.0, roll: 20.0, attitude: 40.0 };
+    let interceptor_max_accel = MissileAccel { _forward: 30.0, _backward: 20.0, _roll: 20.0, _attitude: 40.0 };
     let interceptor_flight_range = 370_000.0; // 370 km
     let mut interceptor = InterceptorMissile::new(interceptor_pos, interceptor_vel, interceptor_detonation_dist, interceptor_target_pos, interceptor_max_accel, interceptor_flight_range);
 
@@ -82,12 +82,12 @@ fn main() {
     //}
 
     // Chat gpt. 
-    let root = BitMapBackend::gif("missile_paths.gif", (3840, 2160), 250).unwrap().into_drawing_area();
+    let root = BitMapBackend::gif("missile_paths.gif", (1920, 1080), 250).unwrap().into_drawing_area();
 
     // Setup chart with 3D projection
-    let x_range = -100.0..500_000.0;
-    let y_range = -100.0..500_000.0;
-    let z_range = -100.0..500_000.0;
+    let x_range = 0.0..500_000.0;
+    let y_range = 0.0..500_000.0;
+    let z_range = 0.0..500_000.0;
     // Simulation parameters
     let time_step = 0.005;
 
@@ -117,9 +117,9 @@ fn main() {
         interceptor_positions.push((interceptor.pos.x, interceptor.pos.y, interceptor.pos.z));
 
 
-        if (iter_count % 10_000 == 0) | 
-            ((abs_dist(&interceptor.pos, &enemy.pos) < 100.0) & 
-             (iter_count % 100 == 0)) {
+        if (iter_count % 5_000 == 0) | 
+            ((abs_dist(&interceptor.pos, &enemy.pos) < 10_000.0) & 
+             (iter_count % 1_000 == 0)) {
             // draw frame
 
             root.fill(&WHITE).unwrap();
@@ -135,9 +135,10 @@ fn main() {
             chart.with_projection(|mut pb| {
                 //pb.pitch = 0.25;
                 //pb.yaw = 0.25;
-                pb.pitch = 0.;
-                pb.yaw = 1.;
-                pb.scale = 0.9;
+                pb.pitch = 0. - (iter_count as f64 / 250_000.); // explain why casting after the
+                                                              // division is bad (integer division)
+                pb.yaw = 1. - (iter_count as f64 / 150_000.);
+                pb.scale = 1.;
                 pb.into_matrix()
             });
 
@@ -158,6 +159,9 @@ fn main() {
                 interceptor_positions.iter().map(|&(x, y, z)| (x, y, z)),
                 &BLUE,
             )).unwrap();
+            
+            // Plot missiles
+            
 
             // Configure and draw chart
             chart.configure_series_labels()
@@ -171,6 +175,7 @@ fn main() {
         }
         iter_count += 1;
     }
+    println!("simulated {iter_count} positions");
 }
 
 
@@ -222,8 +227,7 @@ impl EnemyMissile {
         //let slope = -(adjacent.sin()); // The slope of the wave (and our missile) when at that point
         //println!("Slope of enemy missile: {slope}");
 
-        self.vel.heading.z = slope; // Set our missile's heading to the computed angle
-        self.vel.heading.y = -1.;
+        self.vel.heading.y = slope; // Set our missile's heading to the computed angle
         //println!("After update: {:?}", self.vel.heading);
         //println!("")
     }
@@ -331,22 +335,22 @@ struct InterceptorMissile {
     vel: Velocity,
     detonation_dist: f64,
     target_pos: Position,
-    max_accel: MissileAccel,
-    flight_range: f64,
+    _max_accel: MissileAccel,
+    _flight_range: f64,
 }
 
 /// Acceleration capabilities for our missile in each dimension.
 /// Measured in m/s^2.
 struct MissileAccel {
-    forward: f64,
-    backward: f64,
-    roll: f64,
-    attitude: f64, // pitch and yaw control
+    _forward: f64,
+    _backward: f64,
+    _roll: f64,
+    _attitude: f64, // pitch and yaw control
 }
 
 impl InterceptorMissile {
-    fn new(pos: Position, vel: Velocity, detonation_dist: f64, target_pos: Position, max_accel: MissileAccel, flight_range: f64) -> Self {
-        InterceptorMissile { pos, vel, detonation_dist, target_pos, max_accel, flight_range }
+    fn new(pos: Position, vel: Velocity, detonation_dist: f64, target_pos: Position, _max_accel: MissileAccel, _flight_range: f64) -> Self {
+        InterceptorMissile { pos, vel, detonation_dist, target_pos, _max_accel, _flight_range }
     }
 
 
