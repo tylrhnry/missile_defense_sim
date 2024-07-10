@@ -63,7 +63,7 @@ fn main() {
     let interceptor_heading = Heading { x: 0.0, y: 1.0, z: 0.0 }; // facing straight up
     let interceptor_vel = Velocity { speed: 500.0, heading: interceptor_heading }; // 4285 km/h
     let interceptor_target_pos = enemy.pos.clone();
-    let interceptor_detonation_dist = 10.0;
+    let interceptor_detonation_dist = 3.0;
     let interceptor_max_accel = MissileAccel { _forward: 30.0, _backward: 20.0, _roll: 20.0, _attitude: 40.0 };
     let interceptor_flight_range = 370_000.0; // 370 km
     let mut interceptor = InterceptorMissile::new(interceptor_pos, interceptor_vel, interceptor_detonation_dist, interceptor_target_pos, interceptor_max_accel, interceptor_flight_range);
@@ -81,8 +81,7 @@ fn main() {
     //    //println!("Interceptor Position: {:?}", &interceptor.pos);
     //}
 
-    // Chat gpt. 
-    let root = BitMapBackend::gif("missile_paths.gif", (1920, 1080), 250).unwrap().into_drawing_area();
+    let root = BitMapBackend::gif("missile_paths.gif", (1920, 1080), 150).unwrap().into_drawing_area();
 
     // Setup chart with 3D projection
     let x_range = 0.0..500_000.0;
