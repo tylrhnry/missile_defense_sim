@@ -30,6 +30,59 @@ use plotters::prelude::*;
 use std::f64::consts::PI;
 
 
+/// cargo clippy
+/// rustfmt --check (then rustfmt)
+
+
+
+/// Git branches
+///
+/// enemy_missile
+///     - define structs for enemy missile, position, heading, velocity, etc.
+///     - impl enemy missile (make constructor);
+///     - make trait for updating missiles
+///     - implement flight update logic (update_pos)
+///     - simulate flight
+///     - write test
+///
+/// interceptor missile
+///     - define struct for interceptor
+///     - impl struct
+///     - impl update velocity
+///     - simulate flight
+///     - docs, clippy, fmt
+/// 
+/// visualization
+///     - plot picture
+///     - plot gif
+///     - tune variables for better appearance
+///
+/// fancy_enemy_path
+///     - implement the update velocity
+///
+/// path_prediction
+///     - regression on enemy (linked list for storing points)
+///     - check where impact would be (binary search)
+///     - time deployment
+///
+/// add_real_limits
+///     - add range limit
+///     - implement the acceleration limits
+///     - give more accurate specs (speed, range, acceleration)
+///     - add a radar
+///     - add multi-threading
+///     - base it off real-time
+///     - add noise/error
+///
+/// web_asm
+///     - visualize it in real time
+///     - host it
+///     - add buttons for starting missiles
+///
+/// link_with_c
+///     - use c/c++ for some common use-case (a common library)
+
+
 
 
 fn main() {
@@ -109,6 +162,9 @@ fn main() {
         if let MissileState::Exploded = interceptor.update_pos(time_step) {
             break;
         }
+
+        // run cargo clippy to show that we could write the loop as a while let
+
         enemy.update_vel();
         interceptor.update_vel(enemy.pos.clone());
 
@@ -164,8 +220,8 @@ fn main() {
 
             // Configure and draw chart
             chart.configure_series_labels()
-                .background_style(&WHITE.mix(0.8))
-                .border_style(&BLACK)
+                .background_style(WHITE.mix(0.8))
+                .border_style(BLACK)
                 .draw()
                 .unwrap();
 
@@ -261,6 +317,7 @@ trait UpdateMissile {
         let new_z = raw_vector.z / magnitude;
         let normalized_vector = Heading { x: new_x, y: new_y, z: new_z };
         normalized_vector
+        // show that we can just return the Heading {} instead of naming then returning
     }
 
     
@@ -280,7 +337,7 @@ trait UpdateMissile {
         // Check if we have gotten close enough to our target
         let target_pos = self.get_target_pos();
         let detonation_dist = self.get_detonation_dist();
-        if abs_dist(&new_pos, &target_pos) < detonation_dist { // go define abs_dist()
+        if abs_dist(&new_pos, target_pos) < detonation_dist { // go define abs_dist()
             // We are close enough for detonation
             self.explode();
             return MissileState::Exploded; // compare return methods
@@ -320,9 +377,7 @@ fn abs_dist(pos_1: &Position, pos_2: &Position) -> f64 {
     let dy = pos_1.y - pos_2.y;
     let dz = pos_1.z - pos_2.z;
 
-    let distance = (dx*dx + dy*dy + dz*dz).sqrt();
-
-    distance
+    (dx*dx + dy*dy + dz*dz).sqrt()
 }
 
 
@@ -358,7 +413,7 @@ impl InterceptorMissile {
         
         // update heading
         let current_pos = &self.pos;
-        let new_goal_heading = InterceptorMissile::get_new_heading(&current_pos, &new_target_pos); // change this at some
+        let new_goal_heading = InterceptorMissile::get_new_heading(current_pos, &new_target_pos); // change this at some
                                                                              // point so that the
                                                                              // target point is
                                                                              // predicted based on
