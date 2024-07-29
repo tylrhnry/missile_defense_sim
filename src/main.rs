@@ -182,20 +182,23 @@ fn main() {
     let mut interceptor_positions = Vec::new();
 
     let mut iter_count = 0;
-    loop {
+    while let (MissileState::Normal, MissileState::Normal) = (
+        enemy.update_pos(time_step),
+        interceptor.update_pos(time_step),
+    ) {
         //println!("{:?}", enemy.pos.clone());
         // match example
-        match enemy.update_pos(time_step) {
-            MissileState::Normal => (), // show what happens when we don't have this arm
-            MissileState::Exploded => {
-                // We can put braces and add many lines of code
-                break;
-            }
-        }
-        // the same as the match, but when we only care about 1 variant
-        if let MissileState::Exploded = interceptor.update_pos(time_step) {
-            break;
-        }
+        // match enemy.update_pos(time_step) {
+        //     MissileState::Normal => (), // show what happens when we don't have this arm
+        //     MissileState::Exploded => {
+        //         // We can put braces and add many lines of code
+        //         break;
+        //     }
+        // }
+        // // the same as the match, but when we only care about 1 variant
+        // if let MissileState::Exploded = interceptor.update_pos(time_step) {
+        //     break;
+        // }
 
         // run cargo clippy to show that we could write the loop as a while let
 
@@ -369,12 +372,12 @@ trait UpdateMissile {
         let new_x = raw_vector.x / magnitude;
         let new_y = raw_vector.y / magnitude;
         let new_z = raw_vector.z / magnitude;
-        let normalized_vector = Heading {
+
+        Heading {
             x: new_x,
             y: new_y,
             z: new_z,
-        };
-        normalized_vector
+        }
         // show that we can just return the Heading {} instead of naming then returning
     }
 
@@ -539,19 +542,19 @@ mod tests {
 
     #[test]
     fn test_enemy_update_pos() {
-        let pos = position {
+        let pos = Position {
             x: 50_000.0,
             y: 500_000.0,
             z: 100_000.0,
         };
-        let heading = heading {
+        let heading = Heading {
             x: 0.0,
             y: -1.0,
             z: 0.0,
         }; // facing straight down the y axis
         let vel = Velocity {
             speed: 700.0,
-            heading: heading,
+            heading,
         }; // 700 m/s
         let target_pos = Position {
             x: 50_000.0,
@@ -559,7 +562,7 @@ mod tests {
             z: 100_000.0,
         };
         let detonation_dist = 3.0;
-        let mut missile = EnemyMissile::new(pos, vel, target_pos, detonation_dist);
+        let mut missile = EnemyMissile::new(pos, vel, target_pos, detonation_dist, None);
 
         assert_eq!(
             missile.pos,
